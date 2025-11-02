@@ -1,0 +1,157 @@
+{
+    "name": "Reserve Rooftop WhatsApp Bot",
+    "nodes": [
+      {
+        "parameters": {
+          "path": "whatsapp",
+          "options": {}
+        },
+        "id": "WebhookTriggerNode",
+        "name": "Webhook Trigger",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [200, 300],
+        "webhookDescription": "Receives WhatsApp messages"
+      },
+      {
+        "parameters": {
+          "functionCode": "const text = $json[\"message\"]?.toLowerCase() || \"\";\n\nconst match = text.match(/reserve rooftop (\\w+) (\\d+)(?:-(\\d+))?pm/);\n\nif (!match) {\n  return [{ status: 'error', message: 'Please send: Reserve rooftop Saturday 7–10pm' }];\n}\n\nreturn [{\n  day: match[1],\n  startHour: parseInt(match[2]),\n  endHour: match[3] ? parseInt(match[3]) : parseInt(match[2]) + 1,\n  status: 'parsed'\n}];"
+        },
+        "id": "ParseMessage",
+        "name": "Parse Message",
+        "type": "n8n-nodes-base.function",
+        "typeVersion": 1,
+        "position": [420, 300]
+      },
+      {
+        "parameters": {
+          "sheetId": "YOUR_GOOGLE_SHEET_ID",
+          "range": "Sheet1!A:E"
+        },
+        "id": "GetRows",
+        "name": "Check Google Sheet",
+        "type": "n8n-nodes-base.googleSheets",
+        "typeVersion": 3,
+        "position": [660, 300],
+        "credentials": {
+          "googleApi": "Google Account"
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "boolean": [],
+            "string": [],
+            "number": [
+              {
+                "value1": "={{$json[\"status\"]}}",
+                "operation": "equal",
+                "value2": "parsed"
+              }
+            ]
+          }
+        },
+        "id": "CheckParsed",
+        "name": "If Parsed Correctly?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 1,
+        "position": [880, 300]
+      },
+      {
+        "parameters": {
+          "calendar": "YOUR_CALENDAR_ID",
+          "start": "={{ new Date().toISOString().split('T')[0] + 'T' + $json[\"startHour\"] + ':00:00Z' }}",
+          "end": "={{ new Date().toISOString().split('T')[0] + 'T' + $json[\"endHour\"] + ':00:00Z' }}",
+          "summary": "Rooftop Reservation"
+        },
+        "id": "AddToCalendar",
+        "name": "Create Calendar Event",
+        "type": "n8n-nodes-base.googleCalendar",
+        "typeVersion": 3,
+        "position": [1100, 300],
+        "credentials": {
+          "googleApi": "Google Account"
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://graph.facebook.com/v19.0/YOUR_PHONE_NUMBER_ID/messages",
+          "method": "POST",
+          "authentication": "predefinedCredentialType",
+          "responseFormat": "json",
+          "bodyParametersJson": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{$json[\"from\"]}}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"✅ Your rooftop reservation is confirmed!\"\n  }\n}",
+          "options": {}
+        },
+        "id": "SendWhatsAppReply",
+        "name": "Send Confirmation",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 1,
+        "position": [1320, 300],
+        "credentials": {
+          "httpBasicAuth": "WhatsApp Cloud API"
+        }
+      }
+    ],
+    "connections": {
+      "Webhook Trigger": {
+        "main": [
+          [
+            {
+              "node": "Parse Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Message": {
+        "main": [
+          [
+            {
+              "node": "Check Google Sheet",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Google Sheet": {
+        "main": [
+          [
+            {
+              "node": "If Parsed Correctly?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If Parsed Correctly?": {
+        "main": [
+          [
+            {
+              "node": "Create Calendar Event",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Create Calendar Event": {
+        "main": [
+          [
+            {
+              "node": "Send Confirmation",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": false,
+    "settings": {},
+    "versionId": "1",
+    "id": "reserve_rooftop"
+  }
+  

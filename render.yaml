@@ -1,4 +1,3 @@
-# render.yaml
 services:
   - type: web
     name: n8n-free
@@ -14,17 +13,16 @@ services:
       - key: N8N_BASIC_AUTH_USER
         value: "admin"
       - key: N8N_BASIC_AUTH_PASSWORD
-        sync: false   # set manually in Render dashboard
+        sync: false   # set manually in Render dashboard Secrets
 
       # ===== URLs and Networking =====
+      # Render assigns PORT automatically; do NOT set N8N_PORT
       - key: WEBHOOK_TUNNEL_URL
-        value: "https://n8n-free.onrender.com"
+        value: "https://n8n-free.onrender.com"  # Replace with your actual Render service URL
       - key: N8N_EDITOR_BASE_URL
         value: "https://n8n-free.onrender.com"
       - key: N8N_HOST
-        value: "n8n-free.onrender.com"
-      - key: N8N_PORT
-        value: "10000"
+        value: "0.0.0.0"     # Listen on all interfaces
       - key: N8N_PROTOCOL
         value: "https"
       - key: N8N_SECURE_COOKIE
@@ -63,4 +61,3 @@ services:
 databases:
   - name: n8n-db
     plan: free
-
